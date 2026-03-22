@@ -33,13 +33,14 @@ function App() {
 
   // LOAD RECENT
   useEffect(() => {
-    setRecent(JSON.parse(localStorage.getItem("recent")) || []);
+    const stored = JSON.parse(localStorage.getItem("recent")) || [];
+    setRecent(stored.slice(0, 5));
   }, []);
 
-  // 🔍 STATIC SUGGESTIONS
+  // SUGGESTIONS
   const cities = [
     "Pune","Mumbai","Delhi","Nashik","Nagpur",
-    "London","Paris","Tokyo","New York"
+    "Aurangabad","Solapur"
   ];
 
   useEffect(() => {
@@ -54,61 +55,97 @@ function App() {
     }
   }, [city]);
 
-  // 🔥 SEARCH
+  // 🔥 FINAL SEARCH (INDIA SAFE + FLEXIBLE)
   const handleSearch = async (searchCity = city) => {
-    if (!searchCity) return;
+    if (!searchCity.trim()) return;
 
     setLoading(true);
     setSuggestions([]);
 
     try {
-      const res = await fetch(
-        `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${searchCity},India&days=5`
+      // 🔍 STEP 1: SEARCH LOCATIONS
+      const searchRes = await fetch(
+        `https://api.weatherapi.com/v1/search.json?key=${API_KEY}&q=${searchCity.trim()}`
       );
-      const data = await res.json();
 
-      if (data.error) {
-        toast.error("City not found");
+      const searchData = await searchRes.json();
+
+      if (!searchData || searchData.length === 0) {
+        toast.error("City not found ❌");
         setLoading(false);
         return;
       }
 
+      // 🇮🇳 STEP 2: SMART INDIA FILTER (FIXED)
+      const indiaMatch = searchData.find(loc => {
+        const country = loc.country?.toLowerCase() || "";
+        const region = loc.region?.toLowerCase() || "";
+
+        return (
+          country.includes("india") ||
+          country === "in" ||
+          region.includes("india")
+        );
+      });
+
+     
+
+      // 📍 STEP 3: GET WEATHER USING LAT/LON
+      const weatherRes = await fetch(
+        `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${indiaMatch.lat},${indiaMatch.lon}&days=5&aqi=no&lang=en`
+      );
+
+      const data = await weatherRes.json();
+
+      if (!weatherRes.ok || data.error) {
+        toast.error("Weather fetch failed ❌");
+        setLoading(false);
+        return;
+      }
+
+      // ✅ SUCCESS
       setWeather(data);
       setForecast(
         data.forecast.forecastday.map(d => d.day.avgtemp_c)
       );
 
-      // recent
-      const updated = [searchCity, ...recent.filter(c => c !== searchCity)].slice(0,5);
+      const updated = [data.location.name, ...recent.filter(c => c !== data.location.name)].slice(0,5);
       setRecent(updated);
       localStorage.setItem("recent", JSON.stringify(updated));
 
-      toast.success("Weather Loaded ✅");
+      toast.success(`Showing ${data.location.name}, India `);
+
     } catch {
-      toast.error("Error");
+      toast.error("API Error ⚠️");
     }
 
     setLoading(false);
   };
 
-  // 🧠 SMART MESSAGE
+  // REFRESH
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  // SMART MESSAGE
   const getMessage = () => {
     if (!weather) return "";
     const temp = weather.current.temp_c;
-    const cond = weather.current.condition.text.toLowerCase();
 
     if (temp > 35) return "🔥 Stay hydrated!";
     if (temp < 15) return "🧥 It's cold outside";
-    if (cond.includes("rain")) return "☔ Carry umbrella";
     return "🌤 Have a great day!";
   };
 
-  // 📊 GRAPH
+  // GRAPH
   const chartData = {
     labels: ["Day1","Day2","Day3","Day4","Day5"],
     datasets: [{
-      label: "Temp °C",
-      data: forecast
+      label: "Temperature °C",
+      data: forecast,
+      borderColor: "#38bdf8",
+      backgroundColor: "#38bdf8",
+      tension: 0.4
     }]
   };
 
@@ -118,7 +155,6 @@ function App() {
 
       <div className="app-box">
         <h1>🌦 Weather App</h1>
-
         <p className="clock">{time}</p>
 
         {/* SEARCH */}
@@ -127,11 +163,10 @@ function App() {
             value={city}
             onChange={(e) => setCity(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Search city..."
+            placeholder="Search Indian city..."
           />
           <button onClick={() => handleSearch()}>Search</button>
 
-          {/* SUGGESTIONS */}
           {suggestions.length > 0 && (
             <div className="suggestions">
               {suggestions.map((s, i) => (
@@ -153,8 +188,8 @@ function App() {
         </div>
 
         {/* REFRESH */}
-        <button className="refresh-btn" onClick={() => handleSearch()}>
-          🔄 Refresh
+        <button className="refresh-btn" onClick={handleRefresh}>
+          🔄 Refresh Page
         </button>
 
         {/* LOADING */}
@@ -163,7 +198,7 @@ function App() {
         {/* WEATHER */}
         {weather && !loading && (
           <div className="card">
-            <h2>{weather.location.name}</h2>
+            <h2>{weather.location.name}, India</h2>
             <h1>{weather.current.temp_c}°C</h1>
             <p>{weather.current.condition.text}</p>
             <p className="message">{getMessage()}</p>

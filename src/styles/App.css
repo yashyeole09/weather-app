@@ -5,7 +5,7 @@
 }
 
 body {
-  background: #0f172a;
+  background: #020617;
   font-family: "Poppins", sans-serif;
   color: white;
   display: flex;
@@ -15,27 +15,21 @@ body {
 }
 
 /* MAIN */
-.main-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
 .app-box {
   width: 100%;
-  max-width: 450px;
-  padding: 25px;
+  max-width: 460px;
+  padding: 30px;
   border-radius: 20px;
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(15px);
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(20px);
   text-align: center;
 }
 
 /* CLOCK */
 .clock {
-  font-size: 14px;
-  opacity: 0.7;
-  margin-bottom: 10px;
+  font-size: 13px;
+  opacity: 0.6;
+  margin-bottom: 15px;
 }
 
 /* SEARCH */
@@ -58,7 +52,6 @@ body {
   border: none;
   background: #3b82f6;
   color: white;
-  cursor: pointer;
 }
 
 /* SUGGESTIONS */
@@ -66,41 +59,47 @@ body {
   position: absolute;
   top: 45px;
   width: 100%;
-  background: #1e293b;
+  background: #0f172a;
   border-radius: 10px;
 }
 
 .suggestions div {
   padding: 10px;
-  cursor: pointer;
 }
 
 .suggestions div:hover {
-  background: #334155;
+  background: #1e293b;
 }
 
 /* RECENT */
 .recent {
-  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 15px;
 }
 
 .recent span {
-  margin: 5px;
-  padding: 5px 10px;
-  background: #334155;
-  border-radius: 10px;
+  padding: 6px 12px;
+  background: #1e293b;
+  border-radius: 20px;
   cursor: pointer;
 }
 
-/* REFRESH */
+/* REFRESH BUTTON */
 .refresh-btn {
-  margin-top: 10px;
-  padding: 8px 15px;
-  border-radius: 20px;
+  margin-top: 15px;
+  padding: 10px 18px;
+  border-radius: 25px;
   border: none;
-  background: #22c55e;
+  background: linear-gradient(to right, #22c55e, #16a34a);
   color: white;
   cursor: pointer;
+  transition: 0.3s;
+}
+
+.refresh-btn:hover {
+  transform: scale(1.05);
 }
 
 /* CARD */
@@ -111,13 +110,18 @@ body {
   border-radius: 15px;
 }
 
+/* MESSAGE */
 .message {
   margin-top: 10px;
+  opacity: 0.8;
 }
 
 /* GRAPH */
 .chart {
   margin-top: 20px;
+  padding: 10px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 15px;
 }
 
 /* SKELETON */
