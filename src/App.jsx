@@ -23,7 +23,6 @@ function App() {
 
   const API_KEY = "f37f09560741490a84374858262103";
 
-  // CLOCK WITH DAY
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
@@ -40,14 +39,12 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // RECENT
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("recent")) || [];
     setRecent(stored.slice(0, 5));
   }, []);
 
-  // SUGGESTIONS
-  const cities = ["Pune","Mumbai","Delhi","Nashik","Nagpur"];
+  const cities = ["Pune","Mumbai","Delhi","Nashik","Nagpur","Thane","Aurangabad","Solapur","Amravati","Kolhapur","Ahmednagar","Latur","Satara","Jalgaon","Dhule","Beed","Nanded","Akola","Buldhana","Parbhani","Hingoli","Chennai","Bengaluru","Hyderabad","Kolkata","Ahmedabad","Surat","Pune","Jaipur","Lucknow","Kanpur","Nagpur","Indore","Thane","Bhopal","Visakhapatnam","Pimpri-Chinchwad","Patna","Vadodara","Ghaziabad","Ludhiana","Agra","Varanasi","Nashik","Meerut","Faridabad","Rajkot","Kalyan-Dombivli","Vasai-Virar","Srinagar","Aurangabad","Dhanbad","Amritsar","Navi Mumbai","Allahabad","Ranchi","Howrah","Coimbatore","Jabalpur","Gwalior","Vijayawada","Jodhpur","Madurai","Raipur","Kota","Guwahati"];
 
   useEffect(() => {
     if (city.length > 1) {
@@ -61,7 +58,6 @@ function App() {
     }
   }, [city]);
 
-  // SEARCH
   const handleSearch = async (searchCity = city) => {
     if (!searchCity.trim()) return;
 
@@ -161,7 +157,7 @@ function App() {
         </div>
       )}
 
-      {/* CONTENT */}
+   
       {weather && (
         <div className="content">
 
@@ -187,7 +183,6 @@ function App() {
             )}
           </div>
 
-          {/* GRAPH */}
           <div className="card graph">
             <Line data={chartData} />
           </div>
@@ -195,7 +190,6 @@ function App() {
         </div>
       )}
 
-      {/* RECENT */}
       <div className="recent">
         {recent.map((r, i) => (
           <div key={i} className="recent-item">
