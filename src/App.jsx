@@ -23,15 +23,24 @@ function App() {
 
   const API_KEY = "f37f09560741490a84374858262103";
 
-  // CLOCK
+  // CLOCK WITH DAY
   useEffect(() => {
     const interval = setInterval(() => {
-      setTime(new Date().toLocaleString());
+      const now = new Date();
+      const formatted = now.toLocaleString("en-IN", {
+        weekday: "long",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+      setTime(formatted);
     }, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // LOAD RECENT
+  // RECENT
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("recent")) || [];
     setRecent(stored.slice(0, 5));
@@ -51,21 +60,6 @@ function App() {
       setSuggestions([]);
     }
   }, [city]);
-
-  // SMART MESSAGE
-  const getSmartMessage = () => {
-    if (!weather) return "";
-
-    const temp = weather.current.temp_c;
-    const humidity = weather.current.humidity;
-    const condition = weather.current.condition.text.toLowerCase();
-
-    if (condition.includes("rain")) return "☔ Carry an umbrella!";
-    if (temp > 35) return "🔥 Too hot! Stay hydrated.";
-    if (temp < 15) return "🧥 Cold weather! Wear warm clothes.";
-    if (humidity > 80) return "💧 High humidity today.";
-    return "🌤 Weather looks good!";
-  };
 
   // SEARCH
   const handleSearch = async (searchCity = city) => {
@@ -103,14 +97,12 @@ function App() {
     setLoading(false);
   };
 
-  // DELETE RECENT
   const removeRecent = (cityName) => {
     const updated = recent.filter(c => c !== cityName);
     setRecent(updated);
     localStorage.setItem("recent", JSON.stringify(updated));
   };
 
-  // REFRESH
   const handleRefresh = () => window.location.reload();
 
   const chartData = {
@@ -119,6 +111,7 @@ function App() {
       label: "Temp °C",
       data: forecast,
       borderColor: "#38bdf8",
+      backgroundColor: "rgba(56,189,248,0.2)",
       tension: 0.4
     }]
   };
@@ -129,12 +122,12 @@ function App() {
 
       {/* NAVBAR */}
       <div className="navbar">
-        <h1>🌦 Weather Pro</h1>
+        <h1 className="logo">WeatherScope</h1>
 
         <div className="nav-right">
           <span className="clock">{time}</span>
           <button className="refresh-btn" onClick={handleRefresh}>
-            🔄
+            ⟳
           </button>
         </div>
       </div>
@@ -160,49 +153,58 @@ function App() {
         )}
       </div>
 
-      {/* MAIN */}
-      <div className="content">
-
-        {/* WEATHER CARD */}
-        <div className="card weather">
-          {loading && <div className="loader"></div>}
-
-          {weather && !loading && (
-            <>
-              <h2>{weather.location.name}</h2>
-              <h1>{weather.current.temp_c}°C</h1>
-              <p>{weather.current.condition.text}</p>
-
-              {/* EXTRA DATA */}
-              <div className="extra">
-                <span>💧 {weather.current.humidity}%</span>
-                <span>🌬 {weather.current.wind_kph} km/h</span>
-                <span>🌡 Feels {weather.current.feelslike_c}°C</span>
-                <span>📊 {weather.current.pressure_mb} mb</span>
-              </div>
-
-              {/* SMART MESSAGE */}
-              <p className="message">{getSmartMessage()}</p>
-            </>
-          )}
+      {/* EMPTY STATE */}
+      {!weather && !loading && (
+        <div className="empty">
+          <h2>🌍 Search for a city</h2>
+          <p>Get real-time weather insights instantly</p>
         </div>
+      )}
 
-        {/* GRAPH */}
-        <div className="card graph">
-          {forecast.length > 0 && <Line data={chartData} />}
+      {/* CONTENT */}
+      {weather && (
+        <div className="content">
+
+          {/* WEATHER */}
+          <div className="card weather">
+            {loading && <div className="loader"></div>}
+
+            {!loading && (
+              <>
+                <h2>{weather.location.name}</h2>
+                <img src={weather.current.condition.icon} alt="icon" />
+                <h1>{weather.current.temp_c}°C</h1>
+                <p>{weather.current.condition.text}</p>
+
+                {/* EXTRA DATA */}
+                <div className="extra">
+                  <div>💧<span>{weather.current.humidity}%</span></div>
+                  <div>🌬<span>{weather.current.wind_kph} km/h</span></div>
+                  <div>🌡<span>{weather.current.feelslike_c}°C</span></div>
+                  <div>📊<span>{weather.current.pressure_mb}</span></div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* GRAPH */}
+          <div className="card graph">
+            <Line data={chartData} />
+          </div>
+
         </div>
-
-      </div>
+      )}
 
       {/* RECENT */}
       <div className="recent">
         {recent.map((r, i) => (
           <div key={i} className="recent-item">
             <span onClick={() => handleSearch(r)}>{r}</span>
-            <button onClick={() => removeRecent(r)}>❌</button>
+            <button onClick={() => removeRecent(r)}>✕</button>
           </div>
         ))}
       </div>
+
     </div>
   );
 }
