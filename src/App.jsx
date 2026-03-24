@@ -16,14 +16,14 @@ function App() {
   const [city, setCity] = useState("");
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
   const [recent, setRecent] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [time, setTime] = useState("");
 
   const API_KEY = "f37f09560741490a84374858262103";
 
-  // ⏰ CLOCK
+  // CLOCK
   useEffect(() => {
     const interval = setInterval(() => {
       setTime(new Date().toLocaleString());
@@ -38,10 +38,7 @@ function App() {
   }, []);
 
   // SUGGESTIONS
-  const cities = [
-    "Pune","Mumbai","Delhi","Nashik","Nagpur",
-    "Aurangabad","Solapur"
-  ];
+  const cities = ["Pune","Mumbai","Delhi","Nashik","Nagpur"];
 
   useEffect(() => {
     if (city.length > 1) {
@@ -55,7 +52,22 @@ function App() {
     }
   }, [city]);
 
-  // 🔥 FINAL SEARCH (INDIA SAFE + FLEXIBLE)
+  // SMART MESSAGE
+  const getSmartMessage = () => {
+    if (!weather) return "";
+
+    const temp = weather.current.temp_c;
+    const humidity = weather.current.humidity;
+    const condition = weather.current.condition.text.toLowerCase();
+
+    if (condition.includes("rain")) return "☔ Carry an umbrella!";
+    if (temp > 35) return "🔥 Too hot! Stay hydrated.";
+    if (temp < 15) return "🧥 Cold weather! Wear warm clothes.";
+    if (humidity > 80) return "💧 High humidity today.";
+    return "🌤 Weather looks good!";
+  };
+
+  // SEARCH
   const handleSearch = async (searchCity = city) => {
     if (!searchCity.trim()) return;
 
@@ -63,47 +75,17 @@ function App() {
     setSuggestions([]);
 
     try {
-      // 🔍 STEP 1: SEARCH LOCATIONS
-      const searchRes = await fetch(
-        `https://api.weatherapi.com/v1/search.json?key=${API_KEY}&q=${searchCity.trim()}`
+      const res = await fetch(
+        `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${searchCity}&days=5`
       );
+      const data = await res.json();
 
-      const searchData = await searchRes.json();
-
-      if (!searchData || searchData.length === 0) {
+      if (data.error) {
         toast.error("City not found ❌");
         setLoading(false);
         return;
       }
 
-      // 🇮🇳 STEP 2: SMART INDIA FILTER (FIXED)
-      const indiaMatch = searchData.find(loc => {
-        const country = loc.country?.toLowerCase() || "";
-        const region = loc.region?.toLowerCase() || "";
-
-        return (
-          country.includes("india") ||
-          country === "in" ||
-          region.includes("india")
-        );
-      });
-
-     
-
-      // 📍 STEP 3: GET WEATHER USING LAT/LON
-      const weatherRes = await fetch(
-        `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${indiaMatch.lat},${indiaMatch.lon}&days=5&aqi=no&lang=en`
-      );
-
-      const data = await weatherRes.json();
-
-      if (!weatherRes.ok || data.error) {
-        toast.error("Weather fetch failed ❌");
-        setLoading(false);
-        return;
-      }
-
-      // ✅ SUCCESS
       setWeather(data);
       setForecast(
         data.forecast.forecastday.map(d => d.day.avgtemp_c)
@@ -113,104 +95,113 @@ function App() {
       setRecent(updated);
       localStorage.setItem("recent", JSON.stringify(updated));
 
-      toast.success(`Showing ${data.location.name}, India `);
-
+      toast.success(`Showing ${data.location.name}`);
     } catch {
-      toast.error("API Error ⚠️");
+      toast.error("API Error");
     }
 
     setLoading(false);
   };
 
+  // DELETE RECENT
+  const removeRecent = (cityName) => {
+    const updated = recent.filter(c => c !== cityName);
+    setRecent(updated);
+    localStorage.setItem("recent", JSON.stringify(updated));
+  };
+
   // REFRESH
-  const handleRefresh = () => {
-    window.location.reload();
-  };
+  const handleRefresh = () => window.location.reload();
 
-  // SMART MESSAGE
-  const getMessage = () => {
-    if (!weather) return "";
-    const temp = weather.current.temp_c;
-
-    if (temp > 35) return "🔥 Stay hydrated!";
-    if (temp < 15) return "🧥 It's cold outside";
-    return "🌤 Have a great day!";
-  };
-
-  // GRAPH
   const chartData = {
     labels: ["Day1","Day2","Day3","Day4","Day5"],
     datasets: [{
-      label: "Temperature °C",
+      label: "Temp °C",
       data: forecast,
       borderColor: "#38bdf8",
-      backgroundColor: "#38bdf8",
       tension: 0.4
     }]
   };
 
   return (
-    <div className="main-container">
+    <div className="app-container">
       <Toaster />
 
-      <div className="app-box">
-        <h1>🌦 Weather App</h1>
-        <p className="clock">{time}</p>
+      {/* NAVBAR */}
+      <div className="navbar">
+        <h1>🌦 Weather Pro</h1>
 
-        {/* SEARCH */}
-        <div className="search-wrapper">
-          <input
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Search Indian city..."
-          />
-          <button onClick={() => handleSearch()}>Search</button>
+        <div className="nav-right">
+          <span className="clock">{time}</span>
+          <button className="refresh-btn" onClick={handleRefresh}>
+            🔄
+          </button>
+        </div>
+      </div>
 
-          {suggestions.length > 0 && (
-            <div className="suggestions">
-              {suggestions.map((s, i) => (
-                <div key={i} onClick={() => handleSearch(s)}>
-                  {s}
-                </div>
-              ))}
-            </div>
+      {/* SEARCH */}
+      <div className="search-box">
+        <input
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          placeholder="Search city..."
+        />
+        <button onClick={() => handleSearch()}>Search</button>
+
+        {suggestions.length > 0 && (
+          <div className="suggestions">
+            {suggestions.map((s, i) => (
+              <div key={i} onClick={() => handleSearch(s)}>
+                {s}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* MAIN */}
+      <div className="content">
+
+        {/* WEATHER CARD */}
+        <div className="card weather">
+          {loading && <div className="loader"></div>}
+
+          {weather && !loading && (
+            <>
+              <h2>{weather.location.name}</h2>
+              <h1>{weather.current.temp_c}°C</h1>
+              <p>{weather.current.condition.text}</p>
+
+              {/* EXTRA DATA */}
+              <div className="extra">
+                <span>💧 {weather.current.humidity}%</span>
+                <span>🌬 {weather.current.wind_kph} km/h</span>
+                <span>🌡 Feels {weather.current.feelslike_c}°C</span>
+                <span>📊 {weather.current.pressure_mb} mb</span>
+              </div>
+
+              {/* SMART MESSAGE */}
+              <p className="message">{getSmartMessage()}</p>
+            </>
           )}
         </div>
 
-        {/* RECENT */}
-        <div className="recent">
-          {recent.map((r, i) => (
-            <span key={i} onClick={() => handleSearch(r)}>
-              {r}
-            </span>
-          ))}
+        {/* GRAPH */}
+        <div className="card graph">
+          {forecast.length > 0 && <Line data={chartData} />}
         </div>
 
-        {/* REFRESH */}
-        <button className="refresh-btn" onClick={handleRefresh}>
-          🔄 Refresh Page
-        </button>
+      </div>
 
-        {/* LOADING */}
-        {loading && <div className="skeleton"></div>}
-
-        {/* WEATHER */}
-        {weather && !loading && (
-          <div className="card">
-            <h2>{weather.location.name}, India</h2>
-            <h1>{weather.current.temp_c}°C</h1>
-            <p>{weather.current.condition.text}</p>
-            <p className="message">{getMessage()}</p>
+      {/* RECENT */}
+      <div className="recent">
+        {recent.map((r, i) => (
+          <div key={i} className="recent-item">
+            <span onClick={() => handleSearch(r)}>{r}</span>
+            <button onClick={() => removeRecent(r)}>❌</button>
           </div>
-        )}
-
-        {/* GRAPH */}
-        {forecast.length > 0 && !loading && (
-          <div className="chart">
-            <Line data={chartData} />
-          </div>
-        )}
+        ))}
       </div>
     </div>
   );
